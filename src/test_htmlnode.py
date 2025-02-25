@@ -1,5 +1,5 @@
 import unittest
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -87,6 +87,24 @@ class TestLeafNode(unittest.TestCase):
             node.props,
             None,
         )
+
+
+class TestParentNode(unittest.TestCase):
+    def test_to_html(self):
+      node = ParentNode(
+          "p",
+          [
+              LeafNode("b", "Bold text"),
+              LeafNode(None, "Normal text"),
+              LeafNode("i", "italic text"),
+              LeafNode(None, "Normal text"),
+          ],
+      )
+      self.assertEqual(
+          node.to_html(),
+          '<p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>',
+      )
+
 
 
 if __name__ == "__main__":
