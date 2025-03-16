@@ -4,6 +4,7 @@ from markdown_blocks import (
     markdown_to_blocks,
     block_to_block_type,
     BlockType,
+    extract_title
 )
 
 
@@ -163,6 +164,29 @@ the **same** even with inline stuff
             "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
         )
 
+    def test_title(self):
+        md = """
+# this is an h1
+
+this is paragraph text
+
+## this is an h2
+"""
+        title = extract_title(md)
+        self.assertEqual(title, "this is an h1")
+
+    def test_title_with_no_h1(self):
+        md = """
+this is paragraph text
+
+## this is an h2
+"""
+        # Use assertRaises as a context manager to check if an exception is raised
+        with self.assertRaises(Exception) as context:
+            extract_title(md)
+
+        # Optionally, you can check the exception message
+        self.assertEqual(str(context.exception), "No title found")
 
 if __name__ == "__main__":
     unittest.main()
