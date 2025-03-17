@@ -1,6 +1,7 @@
 import os
 import shutil
 from markdown_blocks import markdown_to_html_node, extract_title
+from pathlib import Path
 
 
 def copy_static(source_dir, dest_dir):
@@ -59,6 +60,39 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_path, 'w') as f:
         f.write(full_html)
 
+# def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+#     for item in dir_path_content:
+#         if os.path.isfile(item):
+#             # It's a file - generate a page
+#             generate_page(
+#                 from_path=item.path,
+#                 template_path=template_path,
+#                 dest_path=os.path.join(dest_dir_path, item.name.replace(".md", ".html"))
+#             )
+#         else:
+#             # It's a directory - recursively copy it
+#             print(f"Copying directory: {os.path.join(item)} to {os.path.join(dest_dir_path, item.name)}")
+#             copy_static(os.path.join(item), os.path.join(dest_dir_path, item.name))
+
+def generate_pages_recursive(content_dir, template_path, output_dir):
+    """
+    Recursively generates pages from content directory
+    """
+    content_path = Path(content_dir)
+    for item in content_path.iterdir():  # This returns Path objects, not strings
+        if item.is_file():
+            if item.suffix == ".md":
+                generate_page(
+                    from_path=item, # os.path.join(item),
+                    template_path=template_path,
+                    dest_path=os.path.join(output_dir, item.name.replace(".md", ".html"))
+                )
+        elif item.is_dir():
+            new_content_dir = str(item)
+            new_output_dir = os.path.join(output_dir, item.name)
+            os.makedirs(new_output_dir, exist_ok=True)
+            generate_pages_recursive(new_content_dir, template_path, new_output_dir)
+
 def main():
     # Delete and recreate the public directory
     if os.path.exists("public"):
@@ -69,11 +103,12 @@ def main():
     if os.path.exists("static"):
         copy_static("static", "public")
 
-    # Generate the index page
-    generate_page(
-        from_path="content/index.md",
-        template_path="template.html",
-        dest_path="public/index.html"
-    )
+    # # Generate the index page
+    # generate_page(
+    #     from_path="content/index.md",
+    #     template_path="template.html",
+    #     dest_path="public/index.html"
+    # )
+    generate_pages_recursive("content", "template.html", "public")
 
 main()
