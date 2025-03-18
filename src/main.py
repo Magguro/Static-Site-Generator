@@ -90,8 +90,8 @@ def main():
     basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
 
     # Ensure basepath doesn't end with a slash unless it's the root
-    if basepath != "/" and basepath.endswith("/"):
-        basepath = basepath[:-1]
+    # if basepath != "/" and basepath.endswith("/"):
+    #     basepath = basepath[:-1]
 
     print(f"Using basepath: {basepath}")
 
