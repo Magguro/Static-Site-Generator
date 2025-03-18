@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from markdown_blocks import markdown_to_html_node, extract_title
 from pathlib import Path
 
@@ -31,7 +32,7 @@ def copy_static(source_dir, dest_dir):
             print(f"Copying directory: {source_item} to {dest_item}")
             copy_static(source_item, dest_item)
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
     # Read markdown content
@@ -53,6 +54,10 @@ def generate_page(from_path, template_path, dest_path):
     full_html = template_content.replace("{{ Title }}", title)
     full_html = full_html.replace("{{ Content }}", html_content)
 
+    # Update paths with basepath
+    full_html = full_html.replace('href="/', f'href="{basepath}')
+    full_html = full_html.replace('src="/', f'src="{basepath}')
+
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
@@ -60,21 +65,7 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_path, 'w') as f:
         f.write(full_html)
 
-# def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
-#     for item in dir_path_content:
-#         if os.path.isfile(item):
-#             # It's a file - generate a page
-#             generate_page(
-#                 from_path=item.path,
-#                 template_path=template_path,
-#                 dest_path=os.path.join(dest_dir_path, item.name.replace(".md", ".html"))
-#             )
-#         else:
-#             # It's a directory - recursively copy it
-#             print(f"Copying directory: {os.path.join(item)} to {os.path.join(dest_dir_path, item.name)}")
-#             copy_static(os.path.join(item), os.path.join(dest_dir_path, item.name))
-
-def generate_pages_recursive(content_dir, template_path, output_dir):
+def generate_pages_recursive(content_dir, template_path, output_dir, basepath):
     """
     Recursively generates pages from content directory
     """
@@ -83,32 +74,36 @@ def generate_pages_recursive(content_dir, template_path, output_dir):
         if item.is_file():
             if item.suffix == ".md":
                 generate_page(
-                    from_path=item, # os.path.join(item),
+                    from_path=item,
                     template_path=template_path,
-                    dest_path=os.path.join(output_dir, item.name.replace(".md", ".html"))
+                    dest_path=os.path.join(output_dir, item.name.replace(".md", ".html")),
+                    basepath=basepath
                 )
         elif item.is_dir():
             new_content_dir = str(item)
             new_output_dir = os.path.join(output_dir, item.name)
             os.makedirs(new_output_dir, exist_ok=True)
-            generate_pages_recursive(new_content_dir, template_path, new_output_dir)
+            generate_pages_recursive(new_content_dir, template_path, new_output_dir, basepath)
 
 def main():
+    # Get basepath from command line or use default
+    basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
+
+    # Ensure basepath doesn't end with a slash unless it's the root
+    if basepath != "/" and basepath.endswith("/"):
+        basepath = basepath[:-1]
+
+    print(f"Using basepath: {basepath}")
+
     # Delete and recreate the public directory
-    if os.path.exists("public"):
-        shutil.rmtree("public")
-    os.makedirs("public")
+    if os.path.exists("docs"):
+        shutil.rmtree("docs")
+    os.makedirs("docs")
 
     # Copy all static files
     if os.path.exists("static"):
-        copy_static("static", "public")
+        copy_static("static", "docs")
 
-    # # Generate the index page
-    # generate_page(
-    #     from_path="content/index.md",
-    #     template_path="template.html",
-    #     dest_path="public/index.html"
-    # )
-    generate_pages_recursive("content", "template.html", "public")
+    generate_pages_recursive("content", "template.html", "docs", basepath)
 
 main()
